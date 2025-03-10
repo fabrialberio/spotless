@@ -1,7 +1,10 @@
-import spotipy
-
-from typing import Iterator, Optional, Self
 import datetime
+from typing import Iterator, Optional, Self
+from os import rename
+
+import mutagen.mp3
+import spotipy
+import yt_dlp
 
 
 class UnspotifyTrackInfo:
@@ -92,4 +95,69 @@ class UnspotifyPlaylist(Iterator):
 
         return UnspotifyTrackInfo(
             self._current_tracks[self._current_pos % 100]["track"]
+        )
+
+
+class _UnspotifyYTLogger:
+    def debug(self, msg: str):
+        if msg.startswith("[debug] "):
+            return
+        else:
+            self.info(msg)
+
+    def info(self, msg: str): ...
+
+    def warning(self, msg: str): ...
+
+    def error(self, msg: str):
+        print(msg)
+
+
+class UnspotifyYTDownloader:
+    _current_pos: int
+    _current_tracks: list[UnspotifyTrackInfo]
+
+    def __init__(self):
+        self._current_pos = 0
+        self._current_tracks = []
+
+    def _set_track_metadata(self, path: str, info: UnspotifyTrackInfo):
+        file = mutagen.mp3.EasyMP3(path)
+
+        file["title"] = info.name
+        file["artist"] = info.artist
+        file["tracknumber"] = str(info.track_number)
+        file["discnumber"] = str(info.disc_number)
+        file["album"] = info.album_name
+
+        if info.release_date is not None:
+            file["date"] = info.release_date.isoformat()
+
+        file.save()
+
+        rename(path, f"{info.artist} - {info.name}.mp3")
+
+    def _track_downloaded(self, path: str):
+        self._set_track_metadata(path, self._current_tracks[self._current_pos])
+        self._current_pos += 1
+
+    def download_playlist(self, playlist: UnspotifyPlaylist):
+        self._current_tracks = list(playlist)
+
+        ydl_opts = {
+            "format": "mp3/bestaudio/best",
+            "outtmpl": f"./{playlist.name}/%(title)s.%(ext)s",
+            "logger": _UnspotifyYTLogger(),
+            "postprocessors": [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                }
+            ],
+        }
+
+        ydl = yt_dlp.YoutubeDL(ydl_opts)
+        ydl.add_post_hook(self._track_downloaded)
+        ydl.download(
+            [f"ytsearch:{t.artist} {t.name}" for t in self._current_tracks]
         )
