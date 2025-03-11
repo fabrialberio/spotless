@@ -1,10 +1,14 @@
 import datetime
-from typing import Iterator, Optional, Self
+import pathlib
+import urllib.request
 from os import rename
+from threading import Thread
+from typing import Iterator, Optional, Self
 
-import mutagen.mp3
+import mutagen.id3
 import spotipy
 import yt_dlp
+from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TPE1, TRCK, TYER
 
 
 class UnspotifyTrackInfo:
@@ -122,23 +126,46 @@ class UnspotifyYTDownloader:
         self._current_tracks = []
 
     def _set_track_metadata(self, path: str, info: UnspotifyTrackInfo):
-        file = mutagen.mp3.EasyMP3(path)
+        file = mutagen.id3.ID3(path)
 
-        file["title"] = info.name
-        file["artist"] = info.artist
-        file["tracknumber"] = str(info.track_number)
-        file["discnumber"] = str(info.disc_number)
-        file["album"] = info.album_name
+        file.add(TOFN(encoding=3, text=pathlib.Path(path).stem))
+        file.add(TIT2(encoding=3, text=info.name))
+        file.add(TPE1(encoding=3, text=info.artist))
+        file.add(TRCK(encoding=3, text=str(info.track_number)))
+        file.add(TALB(encoding=3, text=info.album_name))
 
         if info.release_date is not None:
-            file["date"] = info.release_date.isoformat()
+            file.add(TYER(encoding=3, text=str(info.release_date.year)))
+
+        with urllib.request.urlopen(info.album_image_url) as response:
+            file.add(
+                APIC(
+                    mime="image/jpeg",
+                    type=3,
+                    desc="Cover",
+                    data=response.read(),
+                )
+            )
 
         file.save()
 
-        rename(path, f"{info.artist} - {info.name}.mp3")
+        rename(
+            path, pathlib.Path(path).with_stem(f"{info.artist} - {info.name}")
+        )
+
+        print(f"\tFinished saving «{info.name}».")
 
     def _track_downloaded(self, path: str):
-        self._set_track_metadata(path, self._current_tracks[self._current_pos])
+        print(
+            f"({self._current_pos + 1}/{len(self._current_tracks)}) \tDownloaded «{self._current_tracks[self._current_pos].name}»..."
+        )
+
+        thread = Thread(
+            target=self._set_track_metadata,
+            args=(path, self._current_tracks[self._current_pos]),
+        )
+        thread.start()
+
         self._current_pos += 1
 
     def download_playlist(self, playlist: UnspotifyPlaylist):
