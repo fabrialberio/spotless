@@ -8,7 +8,7 @@ from typing import Iterator, Optional, Self
 import mutagen.id3
 import spotipy
 import yt_dlp
-from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TOPE, TORY, TPE1, TRCK
+from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE2, TRCK
 
 
 class UnspotifyTrackInfo:
@@ -130,8 +130,7 @@ class UnspotifyYTDownloader:
 
         file.add(TOFN(encoding=3, text=pathlib.Path(path).stem))
         file.add(TIT2(encoding=3, text=info.name))
-        file.add(TPE1(encoding=3, text=info.artist))
-        file.add(TOPE(encoding=3, text=info.artist))
+        file.add(TPE2(encoding=3, text=info.artist))
         file.add(TRCK(encoding=3, text=str(info.track_number)))
         file.add(TALB(encoding=3, text=info.album_name))
 
