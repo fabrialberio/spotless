@@ -9,5 +9,7 @@ if __name__ == "__main__":
     playlist_url = input("Insert link to the playlist you want to download: ")
     playlist = UnspotifyPlaylist.from_url(sp, playlist_url)
 
+    print(f"Downloading songs from «{playlist.name}»...")
+
     downloader = UnspotifyYTDownloader()
     downloader.download_playlist(playlist)
