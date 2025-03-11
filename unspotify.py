@@ -8,7 +8,7 @@ from typing import Iterator, Optional, Self
 import mutagen.id3
 import spotipy
 import yt_dlp
-from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TPE1, TRCK, TYER
+from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TPE1, TRCK, TORY
 
 
 class UnspotifyTrackInfo:
@@ -135,7 +135,7 @@ class UnspotifyYTDownloader:
         file.add(TALB(encoding=3, text=info.album_name))
 
         if info.release_date is not None:
-            file.add(TYER(encoding=3, text=str(info.release_date.year)))
+            file.add(TORY(encoding=3, text=str(info.release_date.year)))
 
         with urllib.request.urlopen(info.album_image_url) as response:
             file.add(
