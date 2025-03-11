@@ -2,12 +2,10 @@ import datetime
 import pathlib
 import urllib.request
 from os import rename
-from threading import Thread
 from typing import Iterator, Optional, Self
 
 import mutagen.id3
 import spotipy
-import yt_dlp
 from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE2, TRCK
 
 
@@ -17,7 +15,7 @@ class UnspotifyTrackInfo:
     track_number: int
     disc_number: int
     album_name: str
-    album_image_url: str
+    album_image_url: Optional[str]
     release_date: Optional[datetime.date]
 
     def __init__(self, track: dict):
@@ -56,6 +54,35 @@ class UnspotifyTrackInfo:
                 self.release_date = None
             case _ as p:
                 raise ValueError(f"Unsupported precision «{p}»")
+
+    def add_to_file(self, path: str):
+        file = mutagen.id3.ID3(path)
+
+        file.add(TOFN(encoding=3, text=pathlib.Path(path).stem))
+        file.add(TIT2(encoding=3, text=self.name))
+        file.add(TPE2(encoding=3, text=self.artist))
+        file.add(TRCK(encoding=3, text=str(self.track_number)))
+        file.add(TALB(encoding=3, text=self.album_name))
+
+        if self.release_date is not None:
+            file.add(TORY(encoding=3, text=str(self.release_date.year)))
+
+        if self.album_image_url is not None:
+            with urllib.request.urlopen(self.album_image_url) as response:
+                file.add(
+                    APIC(
+                        mime="image/jpeg",
+                        type=3,
+                        desc="Cover",
+                        data=response.read(),
+                    )
+                )
+
+        file.save()
+
+        # rename(
+        #    path, pathlib.Path(path).with_stem((f"{self.artist} - {self.name}"))
+        # )
 
 
 class UnspotifyPlaylist(Iterator):
@@ -99,92 +126,4 @@ class UnspotifyPlaylist(Iterator):
 
         return UnspotifyTrackInfo(
             self._current_tracks[self._current_pos % 100]["track"]
-        )
-
-
-class _UnspotifyYTLogger:
-    def debug(self, msg: str):
-        if msg.startswith("[debug] "):
-            return
-        else:
-            self.info(msg)
-
-    def info(self, msg: str): ...
-
-    def warning(self, msg: str): ...
-
-    def error(self, msg: str):
-        print(msg)
-
-
-class UnspotifyYTDownloader:
-    _current_pos: int
-    _current_tracks: list[UnspotifyTrackInfo]
-
-    def __init__(self):
-        self._current_pos = 0
-        self._current_tracks = []
-
-    def _set_track_metadata(self, path: str, info: UnspotifyTrackInfo):
-        file = mutagen.id3.ID3(path)
-
-        file.add(TOFN(encoding=3, text=pathlib.Path(path).stem))
-        file.add(TIT2(encoding=3, text=info.name))
-        file.add(TPE2(encoding=3, text=info.artist))
-        file.add(TRCK(encoding=3, text=str(info.track_number)))
-        file.add(TALB(encoding=3, text=info.album_name))
-
-        if info.release_date is not None:
-            file.add(TORY(encoding=3, text=str(info.release_date.year)))
-
-        with urllib.request.urlopen(info.album_image_url) as response:
-            file.add(
-                APIC(
-                    mime="image/jpeg",
-                    type=3,
-                    desc="Cover",
-                    data=response.read(),
-                )
-            )
-
-        file.save()
-
-        rename(
-            path, pathlib.Path(path).with_stem(f"{info.artist} - {info.name}")
-        )
-
-        print(f"\tFinished saving «{info.name}».")
-
-    def _track_downloaded(self, path: str):
-        print(
-            f"({self._current_pos + 1}/{len(self._current_tracks)}) \tDownloaded «{self._current_tracks[self._current_pos].name}»..."
-        )
-
-        thread = Thread(
-            target=self._set_track_metadata,
-            args=(path, self._current_tracks[self._current_pos]),
-        )
-        thread.start()
-
-        self._current_pos += 1
-
-    def download_playlist(self, playlist: UnspotifyPlaylist):
-        self._current_tracks = list(playlist)
-
-        ydl_opts = {
-            "format": "mp3/bestaudio/best",
-            "outtmpl": f"./{playlist.name}/%(title)s.%(ext)s",
-            "logger": _UnspotifyYTLogger(),
-            "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                }
-            ],
-        }
-
-        ydl = yt_dlp.YoutubeDL(ydl_opts)
-        ydl.add_post_hook(self._track_downloaded)
-        ydl.download(
-            [f"ytsearch:{t.artist} {t.name}" for t in self._current_tracks]
         )
