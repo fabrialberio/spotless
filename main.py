@@ -4,7 +4,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
 from downloaders import UnspotifyThreadedDownloader
-from unspotify import UnspotifyPlaylist
+from unspotify import UnspotifyPlaylist, UnspotifyTrackInfo
 
 if __name__ == "__main__":
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=""))
@@ -15,11 +15,12 @@ if __name__ == "__main__":
     print(f"Downloading songs from «{playlist.name}»...")
     start_time = time.time()
 
+    tracks = list(playlist)
+
+    def track_downloaded(position: int, track: UnspotifyTrackInfo):
+        print(
+            f"({position + 1}/{len(tracks)})\tDownloaded «{track.artist} - {track.name}»"
+        )
+
     downloader = UnspotifyThreadedDownloader()
-    downloader.download_tracks(
-        playlist.name,
-        list(playlist),
-        lambda: print(
-            f"Download completed in {time.time() - start_time:.2f} seconds."
-        ),
-    )
+    downloader.download_tracks(playlist.name, tracks, track_downloaded)
