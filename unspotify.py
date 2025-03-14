@@ -1,12 +1,11 @@
 import datetime
 import pathlib
 import urllib.request
-from os import rename
 from typing import Iterator, Optional, Self
 
 import mutagen.id3
 import spotipy
-from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE2, TRCK
+from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE1, TPE2, TRCK
 
 
 class UnspotifyTrackInfo:
@@ -26,6 +25,7 @@ class UnspotifyTrackInfo:
 
         self.album_name = track["album"]["name"]
 
+        self.album_image_url = None
         max_album_image_size = 0
         album_images = track["album"]["images"]
         for image in album_images:
@@ -60,6 +60,7 @@ class UnspotifyTrackInfo:
 
         file.add(TOFN(encoding=3, text=pathlib.Path(path).stem))
         file.add(TIT2(encoding=3, text=self.name))
+        file.add(TPE1(encoding=3, text=self.artist))
         file.add(TPE2(encoding=3, text=self.artist))
         file.add(TRCK(encoding=3, text=str(self.track_number)))
         file.add(TALB(encoding=3, text=self.album_name))
