@@ -2,6 +2,7 @@ import threading
 from typing import Callable, Protocol
 
 import yt_dlp
+
 from spotless import SpotlessTrackInfo
 
 
