@@ -90,7 +90,7 @@ class SpotlessPlaylist(Iterator):
     name: str
     _sp: spotipy.Spotify
     _playlist_id: str
-    _current_pos: int
+    _position: int
     _current_tracks: list[dict]
 
     def __init__(self, sp: spotipy.Spotify, playlist_id: str):
@@ -99,7 +99,7 @@ class SpotlessPlaylist(Iterator):
 
         self.name = sp.playlist(playlist_id, fields=["name"])["name"]  # type: ignore
 
-        self._current_pos = 0
+        self._position = 0
         self._current_tracks = []
 
     @classmethod
@@ -110,21 +110,21 @@ class SpotlessPlaylist(Iterator):
         return self
 
     def __next__(self) -> SpotlessTrackInfo:
-        if self._current_pos % 100 == 0:
+        if self._position % 100 == 0:
             tracks = self._sp.playlist_tracks(
                 playlist_id=self._playlist_id,
                 limit=100,
-                offset=100 * (self._current_pos // 100),
+                offset=100 * (self._position // 100),
             )
             assert tracks is not None
 
             self._current_tracks = tracks["items"]
 
-        self._current_pos += 1
+        self._position += 1
 
-        if self._current_pos % 100 >= len(self._current_tracks):
+        if self._position % 100 >= len(self._current_tracks):
             raise StopIteration
 
         return SpotlessTrackInfo(
-            self._current_tracks[self._current_pos % 100]["track"]
+            self._current_tracks[self._position % 100]["track"]
         )
