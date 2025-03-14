@@ -1,17 +1,23 @@
 import threading
-from typing import Callable, Protocol
+from typing import Callable, Optional, Protocol
 
 import yt_dlp
 
 from spotless import SpotlessTrackInfo
 
+type _TrackDownloadedCb = Callable[[int, SpotlessTrackInfo], None]
+
 
 class SpotlessDownloader(Protocol):
+    def __init__(
+        self,
+        track_downloaded_cb: Optional[_TrackDownloadedCb] = None,
+    ): ...
+
     def download_tracks(
         self,
         dirname: str,
         tracks: list[SpotlessTrackInfo],
-        track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None],
     ): ...
 
 
@@ -33,7 +39,12 @@ class _SpotlessYTLogger:
 class SpotlessYTDownloader(SpotlessDownloader):
     _position: int
     _tracks: list[SpotlessTrackInfo]
-    _track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None]
+    _track_downloaded_cb: Optional[_TrackDownloadedCb]
+
+    def __init__(
+        self, track_downloaded_cb: Optional[_TrackDownloadedCb] = None
+    ):
+        self._track_downloaded_cb = track_downloaded_cb
 
     def _track_downloaded(self, path: str):
         track = self._tracks[self._position]
@@ -45,17 +56,17 @@ class SpotlessYTDownloader(SpotlessDownloader):
         thread.start()
 
         self._position += 1
-        self._track_downloaded_cb(self._position, track)
+
+        if self._track_downloaded_cb is not None:
+            self._track_downloaded_cb(self._position, track)
 
     def download_tracks(
         self,
         dirname: str,
         tracks: list[SpotlessTrackInfo],
-        track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None],
     ):
         self._position = 0
         self._tracks = tracks
-        self._track_downloaded_cb = track_downloaded_cb
 
         ydl_opts = {
             "format": "mp3/bestaudio/best",
@@ -76,21 +87,25 @@ class SpotlessYTDownloader(SpotlessDownloader):
 
 class SpotlessThreadedDownloader(SpotlessDownloader):
     _position: int
-    _track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None]
+    _track_downloaded_cb: Optional[_TrackDownloadedCb]
+
+    def __init__(
+        self, track_downloaded_cb: Optional[_TrackDownloadedCb] = None
+    ):
+        self._track_downloaded_cb = track_downloaded_cb
 
     def track_downloaded(self, _: int, track: SpotlessTrackInfo):
-        self._track_downloaded_cb(self._position, track)
+        if self._track_downloaded_cb is not None:
+            self._track_downloaded_cb(self._position, track)
+
         self._position += 1
 
     def download_tracks(
         self,
         dirname: str,
         tracks: list[SpotlessTrackInfo],
-        track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None],
     ):
         self._position = 0
-        self._track_downloaded_cb = track_downloaded_cb
-
         total_threads = min(6, len(tracks) // 5)
 
         slice_lenght = (len(tracks) // total_threads) + 1
@@ -101,10 +116,10 @@ class SpotlessThreadedDownloader(SpotlessDownloader):
             ]
 
             print(f"Starting thread {i + 1}/{total_threads}...")
-            downloader = SpotlessYTDownloader()
+            downloader = SpotlessYTDownloader(self.track_downloaded)
 
             thread = threading.Thread(
                 target=downloader.download_tracks,
-                args=(dirname, current_slice, self.track_downloaded),
+                args=(dirname, current_slice),
             )
             thread.start()
