@@ -2,20 +2,19 @@ import threading
 from typing import Callable, Protocol
 
 import yt_dlp
+from spotless import SpotlessTrackInfo
 
-from unspotify import UnspotifyTrackInfo
 
-
-class UnspotifyDownloader(Protocol):
+class SpotlessDownloader(Protocol):
     def download_tracks(
         self,
         dirname: str,
-        tracks: list[UnspotifyTrackInfo],
-        track_downloaded_cb: Callable[[int, UnspotifyTrackInfo], None],
+        tracks: list[SpotlessTrackInfo],
+        track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None],
     ): ...
 
 
-class _UnspotifyYTLogger:
+class _SpotlessYTLogger:
     def debug(self, msg: str):
         if msg.startswith("[debug] "):
             return
@@ -30,10 +29,10 @@ class _UnspotifyYTLogger:
         print(msg)
 
 
-class UnspotifyYTDownloader(UnspotifyDownloader):
+class SpotlessYTDownloader(SpotlessDownloader):
     _position: int
-    _tracks: list[UnspotifyTrackInfo]
-    _track_downloaded_cb: Callable[[int, UnspotifyTrackInfo], None]
+    _tracks: list[SpotlessTrackInfo]
+    _track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None]
 
     def _track_downloaded(self, path: str):
         track = self._tracks[self._position]
@@ -50,8 +49,8 @@ class UnspotifyYTDownloader(UnspotifyDownloader):
     def download_tracks(
         self,
         dirname: str,
-        tracks: list[UnspotifyTrackInfo],
-        track_downloaded_cb: Callable[[int, UnspotifyTrackInfo], None],
+        tracks: list[SpotlessTrackInfo],
+        track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None],
     ):
         self._position = 0
         self._tracks = tracks
@@ -60,7 +59,7 @@ class UnspotifyYTDownloader(UnspotifyDownloader):
         ydl_opts = {
             "format": "mp3/bestaudio/best",
             "outtmpl": f"./{dirname}/%(title)s.%(ext)s",
-            "logger": _UnspotifyYTLogger(),
+            "logger": _SpotlessYTLogger(),
             "postprocessors": [
                 {
                     "key": "FFmpegExtractAudio",
@@ -74,19 +73,19 @@ class UnspotifyYTDownloader(UnspotifyDownloader):
         ydl.download([f"ytsearch:{t.artist} {t.name}" for t in tracks])
 
 
-class UnspotifyThreadedDownloader(UnspotifyDownloader):
+class SpotlessThreadedDownloader(SpotlessDownloader):
     _position: int
-    _track_downloaded_cb: Callable[[int, UnspotifyTrackInfo], None]
+    _track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None]
 
-    def track_downloaded(self, _: int, track: UnspotifyTrackInfo):
+    def track_downloaded(self, _: int, track: SpotlessTrackInfo):
         self._track_downloaded_cb(self._position, track)
         self._position += 1
 
     def download_tracks(
         self,
         dirname: str,
-        tracks: list[UnspotifyTrackInfo],
-        track_downloaded_cb: Callable[[int, UnspotifyTrackInfo], None],
+        tracks: list[SpotlessTrackInfo],
+        track_downloaded_cb: Callable[[int, SpotlessTrackInfo], None],
     ):
         self._position = 0
         self._track_downloaded_cb = track_downloaded_cb
@@ -101,7 +100,7 @@ class UnspotifyThreadedDownloader(UnspotifyDownloader):
             ]
 
             print(f"Starting thread {i + 1}/{total_threads}...")
-            downloader = UnspotifyYTDownloader()
+            downloader = SpotlessYTDownloader()
 
             thread = threading.Thread(
                 target=downloader.download_tracks,

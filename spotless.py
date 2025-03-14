@@ -8,7 +8,7 @@ import spotipy
 from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE1, TPE2, TRCK
 
 
-class UnspotifyTrackInfo:
+class SpotlessTrackInfo:
     name: str
     artist: str
     track_number: int
@@ -86,7 +86,7 @@ class UnspotifyTrackInfo:
         # )
 
 
-class UnspotifyPlaylist(Iterator):
+class SpotlessPlaylist(Iterator):
     name: str
     _sp: spotipy.Spotify
     _playlist_id: str
@@ -106,10 +106,10 @@ class UnspotifyPlaylist(Iterator):
     def from_url(cls, sp: spotipy.Spotify, playlist_url: str) -> Self:
         return cls(sp, playlist_url.split("/")[-1].split("&")[0])
 
-    def __iter__(self) -> Iterator[UnspotifyTrackInfo]:
+    def __iter__(self) -> Iterator[SpotlessTrackInfo]:
         return self
 
-    def __next__(self) -> UnspotifyTrackInfo:
+    def __next__(self) -> SpotlessTrackInfo:
         if self._current_pos % 100 == 0:
             tracks = self._sp.playlist_tracks(
                 playlist_id=self._playlist_id,
@@ -125,6 +125,6 @@ class UnspotifyPlaylist(Iterator):
         if self._current_pos % 100 >= len(self._current_tracks):
             raise StopIteration
 
-        return UnspotifyTrackInfo(
+        return SpotlessTrackInfo(
             self._current_tracks[self._current_pos % 100]["track"]
         )

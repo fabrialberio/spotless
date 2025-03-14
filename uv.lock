@@ -99,7 +99,7 @@ wheels = [
 ]
 
 [[package]]
-name = "unspotify"
+name = "spotless"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
