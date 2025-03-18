@@ -1,28 +1,27 @@
-import time
-
 from spotless import SpotlessTrackInfo
+from src.spotify import SpotifyPlaylist
 from src.threaded_downloader import ThreadedDownloader
 from src.youtube import YouTubeDownloader
 from src.youtube_music import YouTubeMusicPlaylist
 
 if __name__ == "__main__":
-    playlist_url = (
-        "https://music.youtube.com/browse/VLPL5v92TGSjhP0hNmjx4EnkQL0ugblJC81j"
+    playlist_url = input(
+        "Inserire il link della playlist che si vuole scaricare: "
     )
-    playlist = YouTubeMusicPlaylist.from_url(playlist_url)
+    if "music.youtube.com" in playlist_url:
+        playlist = YouTubeMusicPlaylist.from_url(playlist_url)
+    elif "open.spotify.com" in playlist_url:
+        playlist = SpotifyPlaylist.from_url(playlist_url)
+    else:
+        raise ValueError("Link non supportato.")
 
-    print(f"Downloading songs from «{playlist.name}»...")
-    start_time = time.time()
-
+    print(f"Elencando le canzoni di «{playlist.name}»...")
     tracks = playlist.fetch_tracks()
-
-    print("First track:", tracks[0])
-
-    exit()
+    print(f"Scaricando {len(tracks)} canzoni...")
 
     def track_downloaded(position: int, track: SpotlessTrackInfo):
         print(
-            f"({position + 1}/{len(tracks)})\tDownloaded «{', '.join(track.artists)} - {track.name}»"
+            f"({position + 1}/{len(tracks)})\tScaricato «{', '.join(track.artists)} - {track.name}»"
         )
 
     downloader = YouTubeDownloader(track_downloaded)
