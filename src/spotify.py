@@ -2,6 +2,7 @@ import datetime
 from typing import Iterator, Self
 
 import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 from spotless import SpotlessPlaylist, SpotlessTrackInfo
 
@@ -87,15 +88,21 @@ class SpotifyPlaylist(SpotlessPlaylist):
     _sp: spotipy.Spotify
     _playlist_id: str
 
-    def __init__(self, sp: spotipy.Spotify, playlist_id: str):
-        self._sp = sp
+    def __init__(
+        self,
+        playlist_id: str,
+    ):
+        self._sp = spotipy.Spotify(auth_manager=SpotifyOAuth())
         self._playlist_id = playlist_id
 
-        self.name = sp.playlist(playlist_id, fields=["name"])["name"]  # type: ignore
+        self.name = self._sp.playlist(playlist_id, fields=["name"])["name"]  # type: ignore
 
     @classmethod
-    def from_url(cls, sp: spotipy.Spotify, playlist_url: str) -> Self:
-        return cls(sp, playlist_url.split("/")[-1].split("&")[0])
+    def from_url(
+        cls,
+        playlist_url: str,
+    ) -> Self:
+        return cls(playlist_url.split("/")[-1].split("&")[0])
 
     def fetch_tracks(self) -> list[SpotlessTrackInfo]:
         return list(_SpotifyPlaylistIterator(self._sp, self._playlist_id))
