@@ -1,25 +1,10 @@
 import threading
-from typing import Callable, Optional, Protocol
+from typing import Optional, Self
 
 import yt_dlp
 
-from spotless import SpotlessTrackInfo
+from spotless import SpotlessDownloader, SpotlessTrackInfo
 from src.id3 import add_track_info_to_file
-
-type _TrackDownloadedCb = Callable[[int, SpotlessTrackInfo], None]
-
-
-class SpotlessDownloader(Protocol):
-    def __init__(
-        self,
-        track_downloaded_cb: Optional[_TrackDownloadedCb] = None,
-    ): ...
-
-    def download_tracks(
-        self,
-        dirname: str,
-        tracks: list[SpotlessTrackInfo],
-    ): ...
 
 
 class _SpotlessYTLogger:
@@ -40,12 +25,6 @@ class _SpotlessYTLogger:
 class SpotlessYTDownloader(SpotlessDownloader):
     _position: int
     _tracks: list[SpotlessTrackInfo]
-    _track_downloaded_cb: Optional[_TrackDownloadedCb]
-
-    def __init__(
-        self, track_downloaded_cb: Optional[_TrackDownloadedCb] = None
-    ):
-        self._track_downloaded_cb = track_downloaded_cb
 
     def _track_downloaded(self, path: str):
         track = self._tracks[self._position]
@@ -58,8 +37,8 @@ class SpotlessYTDownloader(SpotlessDownloader):
 
         self._position += 1
 
-        if self._track_downloaded_cb is not None:
-            self._track_downloaded_cb(self._position, track)
+        if self.track_downloaded_cb is not None:
+            self.track_downloaded_cb(self._position, track)
 
     def download_tracks(
         self,
@@ -90,16 +69,18 @@ class SpotlessYTDownloader(SpotlessDownloader):
 
 class SpotlessThreadedDownloader(SpotlessDownloader):
     _position: int
-    _track_downloaded_cb: Optional[_TrackDownloadedCb]
+    _downloader: SpotlessDownloader
 
-    def __init__(
-        self, track_downloaded_cb: Optional[_TrackDownloadedCb] = None
-    ):
-        self._track_downloaded_cb = track_downloaded_cb
+    def __init__(self, downloader: SpotlessDownloader):
+        self._downloader = downloader
+        self.track_downloaded_cb = downloader.track_downloaded_cb
 
-    def track_downloaded(self, _: int, track: SpotlessTrackInfo):
-        if self._track_downloaded_cb is not None:
-            self._track_downloaded_cb(self._position, track)
+    def dup(self) -> Self:
+        return self.__class__(self._downloader)
+
+    def _track_downloaded(self, _: int, track: SpotlessTrackInfo):
+        if self.track_downloaded_cb is not None:
+            self.track_downloaded_cb(self._position, track)
 
         self._position += 1
 
@@ -119,7 +100,7 @@ class SpotlessThreadedDownloader(SpotlessDownloader):
             ]
 
             print(f"Starting thread {i + 1}/{total_threads}...")
-            downloader = SpotlessYTDownloader(self.track_downloaded)
+            downloader = self._downloader.dup()
 
             thread = threading.Thread(
                 target=downloader.download_tracks,

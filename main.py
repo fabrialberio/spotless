@@ -3,8 +3,8 @@ import time
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
-from downloaders import SpotlessThreadedDownloader
 from spotless import SpotlessPlaylist, SpotlessTrackInfo
+from src.youtube import SpotlessThreadedDownloader, SpotlessYTDownloader
 
 if __name__ == "__main__":
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=""))
@@ -19,8 +19,9 @@ if __name__ == "__main__":
 
     def track_downloaded(position: int, track: SpotlessTrackInfo):
         print(
-            f"({position + 1}/{len(tracks)})\tDownloaded «{track.artist} - {track.name}»"
+            f"({position + 1}/{len(tracks)})\tDownloaded «{', '.join(track.artists)} - {track.name}»"
         )
 
-    downloader = SpotlessThreadedDownloader(track_downloaded)
-    downloader.download_tracks(playlist.name, tracks)
+    downloader = SpotlessYTDownloader(track_downloaded)
+    threaded_downloader = SpotlessThreadedDownloader(downloader)
+    threaded_downloader.download_tracks(playlist.name, tracks)

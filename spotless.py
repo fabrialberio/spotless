@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Iterator, Optional, Self
+from typing import Callable, Iterator, Optional, Protocol, Self
 
 import spotipy
 
@@ -100,3 +100,25 @@ class SpotlessPlaylist(Iterator):
         return self._construct_track(
             self._current_tracks[self._position % 100]["track"]
         )
+
+
+type _TrackDownloadedCb = Callable[[int, SpotlessTrackInfo], None]
+
+
+class SpotlessDownloader(Protocol):
+    track_downloaded_cb: Optional[_TrackDownloadedCb]
+
+    def __init__(
+        self,
+        track_downloaded_cb: Optional[_TrackDownloadedCb] = None,
+    ):
+        self.track_downloaded_cb = track_downloaded_cb
+
+    def dup(self) -> Self:
+        return self.__class__(self.track_downloaded_cb)
+
+    def download_tracks(
+        self,
+        dirname: str,
+        tracks: list[SpotlessTrackInfo],
+    ): ...
