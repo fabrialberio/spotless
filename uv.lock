@@ -107,6 +107,7 @@ dependencies = [
     { name = "pytube" },
     { name = "spotipy" },
     { name = "yt-dlp" },
+    { name = "ytmusicapi" },
 ]
 
 [package.metadata]
@@ -115,6 +116,7 @@ requires-dist = [
     { name = "pytube", specifier = ">=15.0.0" },
     { name = "spotipy", specifier = ">=2.25.1" },
     { name = "yt-dlp", specifier = ">=2025.2.19" },
+    { name = "ytmusicapi", specifier = ">=1.10.2" },
 ]
 
 [[package]]
@@ -133,4 +135,16 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/53/36/ef300ba4a228b74612d4013b43ed303a0d6d2de17a71fc37e0b821577e0a/yt_dlp-2025.2.19.tar.gz", hash = "sha256:f33ca76df2e4db31880f2fe408d44f5058d9f135015b13e50610dfbe78245bea", size = 2929199 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9e/45/6d1b759e68f5363b919828fb0e0c167a1cd5003b5b7c74cc0f0c2096be4f/yt_dlp-2025.2.19-py3-none-any.whl", hash = "sha256:3ed218eaeece55e9d715afd41abc450dc406ee63bf79355169dfde312d38fdb8", size = 3186543 },
+]
+
+[[package]]
+name = "ytmusicapi"
+version = "1.10.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3e/0d/e0039a0158654aeddc1e43547865a36f6ba037866a934445e1d6b5127df6/ytmusicapi-1.10.2.tar.gz", hash = "sha256:8fb4e63dcedd753aa0d755d7b1891df75e720e6ee9753d0e57a4dc015e411bf1", size = 311488 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/32/78cbf28a2299d8a68030764c28ada06892449ea1e923ccb4c8415d2c113b/ytmusicapi-1.10.2-py3-none-any.whl", hash = "sha256:ca491689dc48dd07b3fe362c0a4f93fe8215011c8e059d5d4ed3be78511ea938", size = 93220 },
 ]
