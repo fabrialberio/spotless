@@ -63,6 +63,7 @@ class YouTubeDownloader(SpotlessDownloader):
                     "preferredcodec": "mp3",
                 }
             ],
+            "force-ipv4": True,
         }
 
         ydl = yt_dlp.YoutubeDL(ydl_opts)
