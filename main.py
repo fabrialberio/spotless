@@ -22,5 +22,5 @@ if __name__ == "__main__":
             f"({position + 1}/{len(tracks)})\tDownloaded «{track.artist} - {track.name}»"
         )
 
-    downloader = SpotlessThreadedDownloader()
-    downloader.download_tracks(playlist.name, tracks, track_downloaded)
+    downloader = SpotlessThreadedDownloader(track_downloaded)
+    downloader.download_tracks(playlist.name, tracks)
