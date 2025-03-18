@@ -31,9 +31,6 @@ class SpotlessDownloader(Protocol):
     ):
         self.track_downloaded_cb = track_downloaded_cb
 
-    def dup(self) -> Self:
-        return self.__class__(self.track_downloaded_cb)
-
     def download_tracks(
         self,
         dirname: str,

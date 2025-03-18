@@ -1,19 +1,17 @@
 import threading
-from typing import Self
 
 from spotless import SpotlessDownloader, SpotlessTrackInfo
 
 
 class ThreadedDownloader(SpotlessDownloader):
     _position: int
-    _downloader: SpotlessDownloader
+    _downloader_class: type[SpotlessDownloader]
+    _max_threads: int
 
-    def __init__(self, downloader: SpotlessDownloader):
-        self._downloader = downloader
+    def __init__(self, downloader: SpotlessDownloader, max_threads=6):
+        self._downloader_class = downloader.__class__
         self.track_downloaded_cb = downloader.track_downloaded_cb
-
-    def dup(self) -> Self:
-        return self.__class__(self._downloader)
+        self._max_threads = max_threads
 
     def _track_downloaded(self, _: int, track: SpotlessTrackInfo):
         if self.track_downloaded_cb is not None:
@@ -27,7 +25,7 @@ class ThreadedDownloader(SpotlessDownloader):
         tracks: list[SpotlessTrackInfo],
     ):
         self._position = 0
-        total_threads = min(6, len(tracks) // 5)
+        total_threads = min(self._max_threads, len(tracks) // 5)
 
         slice_lenght = (len(tracks) // total_threads) + 1
 
@@ -36,8 +34,7 @@ class ThreadedDownloader(SpotlessDownloader):
                 i * slice_lenght : min((i + 1) * slice_lenght, len(tracks))
             ]
 
-            print(f"Starting thread {i + 1}/{total_threads}...")
-            downloader = self._downloader.dup()
+            downloader = self._downloader_class(self._track_downloaded)
 
             thread = threading.Thread(
                 target=downloader.download_tracks,
