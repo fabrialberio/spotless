@@ -1,4 +1,5 @@
 import threading
+from dataclasses import dataclass
 
 import yt_dlp
 
@@ -19,6 +20,11 @@ class _YouTubeLogger:
 
     def error(self, msg: str):
         print(msg)
+
+
+@dataclass(frozen=True)
+class YouTubeTrackInfo(SpotlessTrackInfo):
+    video_id: str = ""
 
 
 class YouTubeDownloader(SpotlessDownloader):
@@ -61,6 +67,16 @@ class YouTubeDownloader(SpotlessDownloader):
 
         ydl = yt_dlp.YoutubeDL(ydl_opts)
         ydl.add_post_hook(self._track_downloaded)
-        ydl.download(
-            [f"ytsearch:{' '.join(t.artists)} {t.name}" for t in tracks]
-        )
+
+        search_list = []
+
+        if isinstance(tracks[0], YouTubeTrackInfo):
+            for t in tracks:
+                assert isinstance(t, YouTubeTrackInfo)
+                search_list.append(t.video_id)
+        else:
+            search_list = [
+                f"ytsearch:{' '.join(t.artists)} {t.name}" for t in tracks
+            ]
+
+        ydl.download(search_list)

@@ -4,6 +4,7 @@ import ytmusicapi
 import ytmusicapi.ytmusic
 
 from spotless import SpotlessPlaylist, SpotlessTrackInfo
+from src.youtube import YouTubeTrackInfo
 
 
 class YouTubeMusicPlaylist(SpotlessPlaylist):
@@ -32,7 +33,8 @@ class YouTubeMusicPlaylist(SpotlessPlaylist):
                 max_album_image_size = image["height"]
                 album_image_url = image["url"]
 
-        return SpotlessTrackInfo(
+        return YouTubeTrackInfo(
+            video_id=track["videoId"],
             name=track["title"],
             artists=[artist["name"] for artist in track["artists"]],
             album_name=track["album"]["name"],
