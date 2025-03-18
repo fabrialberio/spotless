@@ -4,7 +4,7 @@ from typing import Iterator, Self
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
-from spotless import SpotlessPlaylist, SpotlessTrackInfo
+from src.spotless import SpotlessPlaylist, SpotlessTrackInfo
 
 
 class _SpotifyPlaylistIterator(Iterator[SpotlessTrackInfo]):

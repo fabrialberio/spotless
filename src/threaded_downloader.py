@@ -1,6 +1,6 @@
 import threading
 
-from spotless import SpotlessDownloader, SpotlessTrackInfo
+from src.spotless import SpotlessDownloader, SpotlessTrackInfo
 
 
 class ThreadedDownloader(SpotlessDownloader):

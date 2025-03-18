@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 import yt_dlp
 
-from spotless import SpotlessDownloader, SpotlessTrackInfo
 from src.id3 import add_track_info_to_file
+from src.spotless import SpotlessDownloader, SpotlessTrackInfo
 
 
 class _YouTubeLogger:

@@ -3,7 +3,7 @@ from typing import Self
 import ytmusicapi
 import ytmusicapi.ytmusic
 
-from spotless import SpotlessPlaylist, SpotlessTrackInfo
+from src.spotless import SpotlessPlaylist, SpotlessTrackInfo
 from src.youtube import YouTubeTrackInfo
 
 

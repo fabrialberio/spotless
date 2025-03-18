@@ -4,7 +4,7 @@ import urllib.request
 import mutagen.id3
 from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE1, TPE2, TRCK
 
-from spotless import SpotlessTrackInfo
+from src.spotless import SpotlessTrackInfo
 
 ID3_SEPARATOR = "\u0000"
 
