@@ -12,7 +12,7 @@ from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE1, TPE2, TRCK
 @dataclass(frozen=True)
 class SpotlessTrackInfo:
     name: str
-    artist: str
+    artists: list[str]
     track_number: int
     disc_number: int
     album_name: str
@@ -54,7 +54,7 @@ class SpotlessTrackInfo:
 
         return cls(
             name=track["name"],
-            artist=track["artists"][0]["name"],  # TODO: Multiple artists?
+            artists=[artist["name"] for artist in track["artists"]],
             track_number=track["track_number"],
             disc_number=track["disc_number"],
             album_name=track["album"]["name"],
@@ -67,8 +67,8 @@ class SpotlessTrackInfo:
 
         file.add(TOFN(encoding=3, text=pathlib.Path(path).stem))
         file.add(TIT2(encoding=3, text=self.name))
-        file.add(TPE1(encoding=3, text=self.artist))
-        file.add(TPE2(encoding=3, text=self.artist))
+        file.add(TPE1(encoding=3, text="\u0000".join(self.artists)))
+        file.add(TPE2(encoding=3, text="\u0000".join(self.artists)))
         file.add(TRCK(encoding=3, text=str(self.track_number)))
         file.add(TALB(encoding=3, text=self.album_name))
 

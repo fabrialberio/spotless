@@ -4,6 +4,7 @@ from typing import Callable, Optional, Protocol
 import yt_dlp
 
 from spotless import SpotlessTrackInfo
+from src.id3 import add_track_info_to_file
 
 type _TrackDownloadedCb = Callable[[int, SpotlessTrackInfo], None]
 
@@ -50,8 +51,8 @@ class SpotlessYTDownloader(SpotlessDownloader):
         track = self._tracks[self._position]
 
         thread = threading.Thread(
-            target=track.add_to_file,
-            args=(path,),
+            target=add_track_info_to_file,
+            args=(track, path),
         )
         thread.start()
 
@@ -82,7 +83,9 @@ class SpotlessYTDownloader(SpotlessDownloader):
 
         ydl = yt_dlp.YoutubeDL(ydl_opts)
         ydl.add_post_hook(self._track_downloaded)
-        ydl.download([f"ytsearch:{t.artist} {t.name}" for t in tracks])
+        ydl.download(
+            [f"ytsearch:{' '.join(t.artists)} {t.name}" for t in tracks]
+        )
 
 
 class SpotlessThreadedDownloader(SpotlessDownloader):
