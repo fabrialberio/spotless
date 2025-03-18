@@ -1,26 +1,22 @@
 import datetime
 from dataclasses import dataclass
-from typing import Callable, Iterator, Optional, Protocol, Self
+from typing import Callable, Optional, Protocol, Self
 
 
 @dataclass(frozen=True)
 class SpotlessTrackInfo:
     name: str
     artists: list[str]
-    track_number: int
-    disc_number: int
     album_name: str
-    album_image_url: Optional[str]
-    release_date: Optional[datetime.date]
+    track_number: Optional[int] = None
+    release_date: Optional[datetime.date] = None
+    album_image_url: Optional[str] = None
 
 
-class SpotlessPlaylist(Iterator):
+class SpotlessPlaylist:
     name: str
 
-    def __iter__(self) -> Iterator[SpotlessTrackInfo]:
-        return self
-
-    def __next__(self) -> SpotlessTrackInfo: ...
+    def fetch_tracks(self) -> list[SpotlessTrackInfo]: ...
 
 
 type _TrackDownloadedCb = Callable[[int, SpotlessTrackInfo], None]

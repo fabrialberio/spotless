@@ -1,23 +1,24 @@
 import time
 
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-
 from spotless import SpotlessTrackInfo
-from src.spotify import SpotifyPlaylist
 from src.threaded_downloader import ThreadedDownloader
 from src.youtube import YouTubeDownloader
+from src.youtube_music import YouTubeMusicPlaylist
 
 if __name__ == "__main__":
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=""))
-
-    playlist_url = input("Insert link to the playlist you want to download: ")
-    playlist = SpotifyPlaylist.from_url(sp, playlist_url)
+    playlist_url = (
+        "https://music.youtube.com/browse/VLPL5v92TGSjhP0hNmjx4EnkQL0ugblJC81j"
+    )
+    playlist = YouTubeMusicPlaylist.from_url(playlist_url)
 
     print(f"Downloading songs from «{playlist.name}»...")
     start_time = time.time()
 
-    tracks = list(playlist)
+    tracks = playlist.fetch_tracks()
+
+    print("First track:", tracks[0])
+
+    exit()
 
     def track_downloaded(position: int, track: SpotlessTrackInfo):
         print(

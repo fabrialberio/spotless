@@ -16,8 +16,10 @@ def add_track_info_to_file(info: SpotlessTrackInfo, path: str):
     file.add(TIT2(encoding=3, text=info.name))
     file.add(TPE1(encoding=3, text=ID3_SEPARATOR.join(info.artists)))
     file.add(TPE2(encoding=3, text=ID3_SEPARATOR.join(info.artists)))
-    file.add(TRCK(encoding=3, text=str(info.track_number)))
     file.add(TALB(encoding=3, text=info.album_name))
+
+    if info.track_number is not None:
+        file.add(TRCK(encoding=3, text=str(info.track_number)))
 
     if info.release_date is not None:
         file.add(TORY(encoding=3, text=str(info.release_date.year)))

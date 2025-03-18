@@ -1,29 +1,22 @@
 import datetime
-from typing import Self
+from typing import Iterator, Self
 
 import spotipy
 
 from spotless import SpotlessPlaylist, SpotlessTrackInfo
 
 
-class SpotifyPlaylist(SpotlessPlaylist):
+class _SpotifyPlaylistIterator(Iterator[SpotlessTrackInfo]):
     _sp: spotipy.Spotify
     _playlist_id: str
     _position: int
     _current_tracks: list[dict]
 
-    def __init__(self, sp: spotipy.Spotify, playlist_id: str):
+    def __init__(self, sp: spotipy.Spotify, playlist_id: str) -> None:
         self._sp = sp
         self._playlist_id = playlist_id
-
-        self.name = sp.playlist(playlist_id, fields=["name"])["name"]  # type: ignore
-
         self._position = 0
         self._current_tracks = []
-
-    @classmethod
-    def from_url(cls, sp: spotipy.Spotify, playlist_url: str) -> Self:
-        return cls(sp, playlist_url.split("/")[-1].split("&")[0])
 
     def _construct_track(self, track: dict) -> SpotlessTrackInfo:
         album_image_url = None
@@ -61,7 +54,6 @@ class SpotifyPlaylist(SpotlessPlaylist):
             name=track["name"],
             artists=[artist["name"] for artist in track["artists"]],
             track_number=track["track_number"],
-            disc_number=track["disc_number"],
             album_name=track["album"]["name"],
             album_image_url=album_image_url,
             release_date=release_date,
@@ -86,3 +78,24 @@ class SpotifyPlaylist(SpotlessPlaylist):
         return self._construct_track(
             self._current_tracks[self._position % 100]["track"]
         )
+
+    def __len__(self) -> int:
+        return 0
+
+
+class SpotifyPlaylist(SpotlessPlaylist):
+    _sp: spotipy.Spotify
+    _playlist_id: str
+
+    def __init__(self, sp: spotipy.Spotify, playlist_id: str):
+        self._sp = sp
+        self._playlist_id = playlist_id
+
+        self.name = sp.playlist(playlist_id, fields=["name"])["name"]  # type: ignore
+
+    @classmethod
+    def from_url(cls, sp: spotipy.Spotify, playlist_url: str) -> Self:
+        return cls(sp, playlist_url.split("/")[-1].split("&")[0])
+
+    def fetch_tracks(self) -> list[SpotlessTrackInfo]:
+        return list(_SpotifyPlaylistIterator(self._sp, self._playlist_id))
