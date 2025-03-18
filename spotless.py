@@ -1,6 +1,7 @@
 import datetime
 import pathlib
 import urllib.request
+from dataclasses import dataclass
 from typing import Iterator, Optional, Self
 
 import mutagen.id3
@@ -8,6 +9,7 @@ import spotipy
 from mutagen.id3._frames import APIC, TALB, TIT2, TOFN, TORY, TPE1, TPE2, TRCK
 
 
+@dataclass(frozen=True)
 class SpotlessTrackInfo:
     name: str
     artist: str
@@ -17,43 +19,48 @@ class SpotlessTrackInfo:
     album_image_url: Optional[str]
     release_date: Optional[datetime.date]
 
-    def __init__(self, track: dict):
-        self.name = track["name"]
-        self.artist = track["artists"][0]["name"]  # TODO: Multiple artists?
-        self.track_number = track["track_number"]
-        self.disc_number = track["disc_number"]
-
-        self.album_name = track["album"]["name"]
-
-        self.album_image_url = None
+    @classmethod
+    def from_spotify_track(cls, track: dict) -> Self:
+        album_image_url = None
         max_album_image_size = 0
         album_images = track["album"]["images"]
         for image in album_images:
             if image["height"] > max_album_image_size:
                 max_album_image_size = image["height"]
-                self.album_image_url = image["url"]
+                album_image_url = image["url"]
 
+        release_date = None
         match track["album"]["release_date_precision"]:
             case "day":
-                self.release_date = datetime.date.fromisoformat(
+                release_date = datetime.date.fromisoformat(
                     track["album"]["release_date"]
                 )
             case "month":
                 release_date_parts = track["album"]["release_date"].split("-")
 
-                self.release_date = datetime.date(
+                release_date = datetime.date(
                     int(release_date_parts[0]),
                     int(release_date_parts[1]) + 1,
                     1,
                 )
             case "year":
-                self.release_date = datetime.date(
+                release_date = datetime.date(
                     int(track["album"]["release_date"]), 1, 1
                 )
             case None:
-                self.release_date = None
+                release_date = None
             case _ as p:
                 raise ValueError(f"Unsupported precision «{p}»")
+
+        return cls(
+            name=track["name"],
+            artist=track["artists"][0]["name"],  # TODO: Multiple artists?
+            track_number=track["track_number"],
+            disc_number=track["disc_number"],
+            album_name=track["album"]["name"],
+            album_image_url=album_image_url,
+            release_date=release_date,
+        )
 
     def add_to_file(self, path: str):
         file = mutagen.id3.ID3(path)
@@ -125,6 +132,6 @@ class SpotlessPlaylist(Iterator):
         if self._position % 100 >= len(self._current_tracks):
             raise StopIteration
 
-        return SpotlessTrackInfo(
+        return SpotlessTrackInfo.from_spotify_track(
             self._current_tracks[self._position % 100]["track"]
         )
