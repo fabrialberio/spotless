@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol, Self
+from typing import Callable, Optional, Protocol
 
 
 @dataclass(frozen=True)
