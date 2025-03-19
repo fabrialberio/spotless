@@ -8,16 +8,9 @@ from src.spotless import SpotlessDownloader, SpotlessTrackInfo
 
 
 class _YouTubeLogger:
-    def debug(self, msg: str):
-        if msg.startswith("[debug] "):
-            return
-        else:
-            self.info(msg)
-
+    def debug(self, msg: str): ...
     def info(self, msg: str): ...
-
     def warning(self, msg: str): ...
-
     def error(self, msg: str):
         print(msg)
 
@@ -28,6 +21,13 @@ class YouTubeTrackInfo(SpotlessTrackInfo):
 
 
 class YouTubeDownloader(SpotlessDownloader):
+    """
+    Allows to download tracks from YouTube.
+
+    Uses `yt-dlp` to search for the track's name on YouTube and then downloads
+    the corresponding video.
+    """
+
     _position: int
     _tracks: list[SpotlessTrackInfo]
 
@@ -45,14 +45,7 @@ class YouTubeDownloader(SpotlessDownloader):
         if self.track_downloaded_cb is not None:
             self.track_downloaded_cb(self._position, track)
 
-    def download_tracks(
-        self,
-        dirname: str,
-        tracks: list[SpotlessTrackInfo],
-    ):
-        self._position = 0
-        self._tracks = tracks
-
+    def download_search_list(self, dirname: str, search_list: list[str]):
         ydl_opts = {
             "format": "mp3/bestaudio/best",
             "outtmpl": f"./{dirname}/%(title)s.%(ext)s",
@@ -64,13 +57,22 @@ class YouTubeDownloader(SpotlessDownloader):
                 }
             ],
             "force-ipv4": True,
+            # TODO: Age-restricted videos?
         }
 
         ydl = yt_dlp.YoutubeDL(ydl_opts)
         ydl.add_post_hook(self._track_downloaded)
+        ydl.download(search_list)
+
+    def download_tracks(
+        self,
+        dirname: str,
+        tracks: list[SpotlessTrackInfo],
+    ):
+        self._position = 0
+        self._tracks = tracks
 
         search_list = []
-
         if isinstance(tracks[0], YouTubeTrackInfo):
             for t in tracks:
                 assert isinstance(t, YouTubeTrackInfo)
@@ -80,4 +82,4 @@ class YouTubeDownloader(SpotlessDownloader):
                 f"ytsearch:{' '.join(t.artists)} {t.name}" for t in tracks
             ]
 
-        ydl.download(search_list)
+        self.download_search_list(dirname, search_list)
