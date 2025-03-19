@@ -1,8 +1,7 @@
 from src.spotify import SpotifyPlaylist
 from src.spotless import SpotlessTrackInfo
 from src.threaded_downloader import ThreadedDownloader
-from src.youtube import YouTubeDownloader
-from src.youtube_music import YouTubeMusicPlaylist
+from src.youtube_music import YouTubeMusicDownloader, YouTubeMusicPlaylist
 
 if __name__ == "__main__":
     playlist_url = input(
@@ -25,6 +24,7 @@ if __name__ == "__main__":
         )
 
     print(f"Scaricando {len(tracks)} canzoni...")
-    downloader = YouTubeDownloader(track_downloaded)
+    downloader = YouTubeMusicDownloader(track_downloaded)
+
     threaded_downloader = ThreadedDownloader(downloader)
     threaded_downloader.download_tracks(playlist.name, tracks)
