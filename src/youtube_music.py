@@ -1,13 +1,17 @@
-from typing import Self
+from typing import Callable, Optional, Self
 
-import ytmusicapi
 import ytmusicapi.ytmusic
 
 from src.spotless import SpotlessPlaylist, SpotlessTrackInfo
-from src.youtube import YouTubeTrackInfo
+from src.youtube import YouTubeDownloader, YouTubeTrackInfo
 
 
 class YouTubeMusicPlaylist(SpotlessPlaylist):
+    """
+    Allows to get a list of tracks from a YouTube Music playlist using
+    `ytmusicapi`.
+    """
+
     _ytm: ytmusicapi.YTMusic
     _playlist_id: str
 
@@ -48,3 +52,48 @@ class YouTubeMusicPlaylist(SpotlessPlaylist):
         )
 
         return [self._construct_track(t) for t in playlist["tracks"]]
+
+
+class YouTubeMusicDownloader(YouTubeDownloader):
+    """
+    Allows to download tracks from YouTube Music using `ytmusicapi` and `yt-dlp`.
+
+    Uses `ytmusicapi` to search for the track's name on YouTube Music and then
+    uses `yt-dlp` to download the corresponding video.
+
+    This downloader has more accurate results compared to `YouTubeDownloader`,
+    but it takes more time to search the tracks.
+    """
+
+    _ytm: ytmusicapi.YTMusic
+
+    def __init__(
+        self,
+        track_downloaded_cb: Optional[
+            Callable[[int, SpotlessTrackInfo], None]
+        ] = None,
+    ):
+        super().__init__(track_downloaded_cb)
+        self._ytm = ytmusicapi.YTMusic()
+
+    def download_tracks(
+        self,
+        dirname: str,
+        tracks: list[SpotlessTrackInfo],
+    ):
+        self._position = 0
+        self._tracks = tracks
+
+        search_list = []
+        if isinstance(tracks[0], YouTubeTrackInfo):
+            for t in tracks:
+                assert isinstance(t, YouTubeTrackInfo)
+                search_list.append(t.video_id)
+        else:
+            for t in tracks:
+                for r in self._ytm.search(f"{' '.join(t.artists)} {t.name}"):
+                    if r["resultType"] == "song":
+                        search_list.append(r["videoId"])
+                        break
+
+        self.download_search_list(dirname, search_list)
