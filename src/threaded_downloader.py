@@ -26,17 +26,20 @@ class ThreadedDownloader(SpotlessDownloader):
         tracks: list[SpotlessTrackInfo],
     ):
         self._position = 0
-        # Keep number of songs per thread between 5 and 100
+        # Keep number of songs per thread between 1 and 100
         total_threads = max(
-            min(self._num_threads, len(tracks) // 5), len(tracks) // 100
+            min(self._num_threads, len(tracks)), len(tracks) // 100
         )
 
-        slice_lenght = (len(tracks) // total_threads) + 1
+        slice_lenght, r = divmod(len(tracks), total_threads)
 
         for i in range(total_threads):
             current_slice = tracks[
-                i * slice_lenght : min((i + 1) * slice_lenght, len(tracks))
+                i * slice_lenght : ((i + 1) * slice_lenght + int(r > 0))
             ]
+            r -= 1
+
+            print(f"starting thread {i} with {len(current_slice)} songs...")
 
             downloader = self._downloader_class(self._track_downloaded)
 
@@ -45,5 +48,3 @@ class ThreadedDownloader(SpotlessDownloader):
                 args=(dirname, current_slice),
             )
             thread.start()
-
-            time.sleep(0.3)  # Avoid starting all threads at the same time
