@@ -22,12 +22,12 @@ class YouTubeMusicPlaylist(SpotlessPlaylist):
 
     @classmethod
     def from_url(cls, playlist_url: str) -> Self:
-        return cls(playlist_url.split("/")[-1])
+        return cls(playlist_url.split("/")[-1].split("&")[0].split("=")[-1])
 
     def _construct_track(self, track: dict) -> SpotlessTrackInfo:
         album_image_url = None
         max_album_image_size = 0
-        thumbnails = track["thumbnails"]
+        thumbnails = self._ytm.get_album(track["album"]["id"])["thumbnails"]
         for image in thumbnails:
             if image["height"] > max_album_image_size:
                 max_album_image_size = image["height"]
