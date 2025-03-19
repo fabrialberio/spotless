@@ -85,6 +85,10 @@ class _SpotifyPlaylistIterator(Iterator[SpotlessTrackInfo]):
 
 
 class SpotifyPlaylist(SpotlessPlaylist):
+    """
+    Allows to get a list of tracks from a Spotify playlist using `spotipy`.
+    """
+
     _sp: spotipy.Spotify
     _playlist_id: str
 

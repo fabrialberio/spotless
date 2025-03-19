@@ -1,10 +1,14 @@
 import threading
-import time
 
 from src.spotless import SpotlessDownloader, SpotlessTrackInfo
 
 
 class ThreadedDownloader(SpotlessDownloader):
+    """
+    Allows to download tracks on multiple threads using any
+    `SpotlessDownloader` subclass.
+    """
+
     _position: int
     _downloader_class: type[SpotlessDownloader]
     _num_threads: int
@@ -38,8 +42,6 @@ class ThreadedDownloader(SpotlessDownloader):
                 i * slice_lenght : ((i + 1) * slice_lenght + int(r > 0))
             ]
             r -= 1
-
-            print(f"starting thread {i} with {len(current_slice)} songs...")
 
             downloader = self._downloader_class(self._track_downloaded)
 

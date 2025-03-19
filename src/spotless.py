@@ -5,6 +5,10 @@ from typing import Callable, Optional, Protocol
 
 @dataclass(frozen=True)
 class SpotlessTrackInfo:
+    """
+    Structure containing information about a track.
+    """
+
     name: str
     artists: list[str]
     album_name: str
@@ -14,6 +18,10 @@ class SpotlessTrackInfo:
 
 
 class SpotlessPlaylist:
+    """
+    Base class for allowing to get a list of tracks from a playlist.
+    """
+
     name: str
 
     def fetch_tracks(self) -> list[SpotlessTrackInfo]: ...
@@ -23,6 +31,10 @@ type _TrackDownloadedCb = Callable[[int, SpotlessTrackInfo], None]
 
 
 class SpotlessDownloader(Protocol):
+    """
+    Base class for allowing to download tracks.
+    """
+
     track_downloaded_cb: Optional[_TrackDownloadedCb]
 
     def __init__(
