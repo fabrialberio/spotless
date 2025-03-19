@@ -91,9 +91,26 @@ class YouTubeMusicDownloader(YouTubeDownloader):
                 search_list.append(t.video_id)
         else:
             for t in tracks:
-                for r in self._ytm.search(f"{' '.join(t.artists)} {t.name}"):
-                    if r["resultType"] == "song":
-                        search_list.append(r["videoId"])
-                        break
+                results = self._ytm.search(
+                    f"{' '.join(t.artists)} {t.name}",
+                    filter="songs",
+                    limit=1,
+                    ignore_spelling=True,
+                )
+
+                if len(results) == 0:
+                    results = self._ytm.search(
+                        f"{' '.join(t.artists)} {t.name}",
+                        filter="songs",
+                        limit=1,
+                    )
+
+                if len(results) == 0:
+                    print(
+                        f"Ricerca di «{', '.join(t.artists)} - {t.name}» fallita."
+                    )
+                    break
+
+                search_list.append(results[0]["videoId"])
 
         self.download_search_list(dirname, search_list)
