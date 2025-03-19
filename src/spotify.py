@@ -102,7 +102,7 @@ class SpotifyPlaylist(SpotlessPlaylist):
         cls,
         playlist_url: str,
     ) -> Self:
-        return cls(playlist_url.split("/")[-1].split("&")[0])
+        return cls(playlist_url.split("/")[-1].split("?")[0])
 
     def fetch_tracks(self) -> list[SpotlessTrackInfo]:
         return list(_SpotifyPlaylistIterator(self._sp, self._playlist_id))

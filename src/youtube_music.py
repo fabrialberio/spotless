@@ -22,7 +22,7 @@ class YouTubeMusicPlaylist(SpotlessPlaylist):
 
     @classmethod
     def from_url(cls, playlist_url: str) -> Self:
-        return cls(playlist_url.split("/")[-1].split("&")[0])
+        return cls(playlist_url.split("/")[-1])
 
     def _construct_track(self, track: dict) -> SpotlessTrackInfo:
         album_image_url = None
