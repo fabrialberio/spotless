@@ -1,4 +1,5 @@
 import threading
+import time
 
 from src.spotless import SpotlessDownloader, SpotlessTrackInfo
 
@@ -6,12 +7,12 @@ from src.spotless import SpotlessDownloader, SpotlessTrackInfo
 class ThreadedDownloader(SpotlessDownloader):
     _position: int
     _downloader_class: type[SpotlessDownloader]
-    _max_threads: int
+    _num_threads: int
 
     def __init__(self, downloader: SpotlessDownloader, max_threads=6):
         self._downloader_class = downloader.__class__
         self.track_downloaded_cb = downloader.track_downloaded_cb
-        self._max_threads = max_threads
+        self._num_threads = max_threads
 
     def _track_downloaded(self, _: int, track: SpotlessTrackInfo):
         if self.track_downloaded_cb is not None:
@@ -25,7 +26,10 @@ class ThreadedDownloader(SpotlessDownloader):
         tracks: list[SpotlessTrackInfo],
     ):
         self._position = 0
-        total_threads = min(self._max_threads, len(tracks) // 5)
+        # Keep number of songs per thread between 5 and 100
+        total_threads = max(
+            min(self._num_threads, len(tracks) // 5), len(tracks) // 100
+        )
 
         slice_lenght = (len(tracks) // total_threads) + 1
 
@@ -41,3 +45,5 @@ class ThreadedDownloader(SpotlessDownloader):
                 args=(dirname, current_slice),
             )
             thread.start()
+
+            time.sleep(0.3)  # Avoid starting all threads at the same time
